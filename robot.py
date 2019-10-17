@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
-import numpy as np 
+import numpy as np
+import searching_algorithm as searching
+import contruct_heuristic
 
 def read_file(filename):
     """Read data file and analysis that into needed informations"""
@@ -30,7 +32,8 @@ def read_file(filename):
         "space_lim": space_lim,
         "points_start_end": points_start_end,
         "num_poly": num_poly,
-        "polygons": polygons
+        "polygons": polygons,
+        #"vert_poly":
     }
 
 def plot_line_low(x0, y0, x1, y1):
@@ -104,7 +107,7 @@ def plot_line(x0, y0, x1, y1):
 def plot_polygons(ax, fig, polygons):
     """Ploting polygon with scatter"""
     xlist = []                  
-    ylist = []      
+    ylist = []
     for polygon in polygons:
         length = len(polygon["x"])
         i = 0
@@ -119,12 +122,53 @@ def plot_polygons(ax, fig, polygons):
             ylist.extend(y)
 
     ax.scatter(xlist, ylist)
+    return xlist, ylist
 
 # A(x0, y0), B(x1, y1), xlist, ylist are array contain X coordinate and Y coordinate corresponding
 def searching_argorithm_name(x0, y0, x1, y1, xlist, ylist):
     """"""
     x = [], y= []
     return x, y # with x, y are arrays contain X coordinate and Y coordinate corresponding OF ROUTE
+
+def is_inside_polygon(xlist, ylist, x0, y0):
+    """"""
+    # if the point on edge of the polygons
+    for x in xlist:
+        if x == x0 and ylist[xlist.index(x)] == x0:
+            return True
+
+    x_right_x0 = []
+    for x in xlist:
+        if x > x0 and ylist[xlist.index(x)] == y0:
+            x_right_x0.append(x)
+
+    num_touch_edge = 0
+    i = 0
+    quanl = len(x_right_x0)
+    if quanl <= 1:
+        return False
+
+    while(i < quanl):
+        if x_right_x0[i] + 1 != x_right_x0[i+1]:
+            num_touch_edge += 1
+        i += 1
+    if num_touch_edge % 2 == 0:
+        return False
+
+    return True
+
+# def make_graph(xlist, ylist, vertices_poly, xlim, ylim):
+#     """""""
+#     vertices = {}
+#     vertices["x"] = [], vertices["y"] = []
+
+#     edges = []
+    
+#     for i in range(1, xlim):
+#         for j in range(1, ylim):
+#             if is_inside_polygon(xlist, ylist, i, j):
+#                 continue
+#             vertices
 
 
 def main(filename):
@@ -133,10 +177,13 @@ def main(filename):
     xlim = infor.get("space_lim")[0]
     ylim = infor.get("space_lim")[1]
 
-    x_start_point = infor.get("points_start_end")[0]
-    y_start_point = infor.get("points_start_end")[1]
-    x_end_point = infor.get("points_start_end")[2]
-    y_end_point = infor.get("points_start_end")[3]
+    infor_points = infor.get("points_start_end")
+    points = []
+
+    i = 0
+    while i < len(infor_points):
+        points.append((infor_points[i], infor_points[i+1]))
+        i += 2
 
     num_poly = infor.get("num_poly")
 
@@ -150,12 +197,54 @@ def main(filename):
     ax.grid(True)
 
     # ploting polygons
-    plot_polygons(ax, fig, polygons)
+    xlist, ylist = plot_polygons(ax, fig, polygons)
 
+    #-----------------------------------------------
+    my_dict = {}
+    i = 0
+    num_points = len(points)
+    while i < num_points:
+        j = 0
+        while j < num_points:
+            g = searching.Graph((xlim, ylim), xlist, ylist, points[i], points[j])
+            pos_end_node = g.spread_node()
+            my_dict[(i, j)] = g.nodes[pos_end_node].dist
+            j += 1
+        i += 1
+
+
+    stations = [x for x in range(num_points)]
+    temp = stations[1]
+    stations[1] = stations[len(stations)-1]
+    stations[len(stations)-1] = temp
+
+    route = contruct_heuristic.nearest_neighbor(stations, my_dict)
+    print(route)
+    print(contruct_heuristic.cal_total_distance(route, my_dict))
+    new_route = contruct_heuristic.route_improvement(route, my_dict)
+    print(new_route)
+    print(contruct_heuristic.cal_total_distance(new_route, my_dict))
+
+    #-----------------------------------------------
+    # graph
+
+    i = 0
+    while i < len(new_route) - 1:
+        g = searching.Graph((xlim, ylim), xlist, ylist, points[new_route[i]], points[new_route[i+1]])
+        pos_end_node = g.spread_node()
+        x, y = g.find_route(pos_end_node)
+        ax.scatter(x, y, marker='o', color='yellow', zorder=2)
+        ax.scatter([x[0], x[-1]], [y[0], y[-1]], marker='o', color='red', zorder=2)
+        i += 1
+
+    x = [points[0][0], points[1][0]]
+    y = [points[0][1], points[1][1]]
+    ax.scatter(x, y, marker='o', color='black', zorder=2)
     # plotting route
     # x, y = searching_argorithm_name(...)
-    # ax.scatter(x, y)
+    #ax.scatter(x, y, marker='o', color='red', zorder=2)
+
     plt.show()  
 
-if __name__ == "__main__":
-    main('input.txt')
+#if __name__ == "__main__":
+main('input.txt')
