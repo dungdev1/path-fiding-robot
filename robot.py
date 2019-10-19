@@ -1,10 +1,28 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import searching_algorithm as searching
-import contruct_heuristic
+from searching_algorithm import breadth_first_search as searching
+import travelling_salesman
 
 def read_file(filename):
-    """Read data file and analysis that into needed informations"""
+    """Read data file and analysis that into needed informations
+
+    Parameters
+    ----------
+    filename : string
+        file name
+
+    Returns
+    -------
+    space_lim
+        The list that contain horizontal limit and vertical limit
+    points_start_end
+        The list that contain coordinate of start point and end point
+    num_poly
+        The number of polygons in the map
+    polygons
+        The information of polygons in map (coordinates of vertices)
+    """
+
     with open(filename) as f:
         lines = f.read().splitlines() 
     space_lim = [int(x) for x in lines[0].split(',')]
@@ -33,11 +51,24 @@ def read_file(filename):
         "points_start_end": points_start_end,
         "num_poly": num_poly,
         "polygons": polygons,
-        #"vert_poly":
     }
 
 def plot_line_low(x0, y0, x1, y1):
-    """Draw line with slope between 0 and 1 or between 0 and -1"""
+    """Draw line with slope between 0 and 1 or between 0 and -1
+
+    Parameters
+    ----------
+    x0, y0 : numbers
+        The corresponding x and y coordinate of the first point
+    x1, y1 : numbers
+        The corresponding x and y coordinate of the second point
+
+    Returns
+    -------
+    xlist, ylist
+        The list that contain coordinates of points from the first point and second points
+    """
+
     dx = x1 - x0
     dy = y1 - y0
     yi = 1
@@ -63,7 +94,21 @@ def plot_line_low(x0, y0, x1, y1):
     return xlist, ylist
     
 def plot_line_high(x0, y0, x1, y1):
-    """Draw line with slope > 1 or < -1"""
+    """Draw line with slope > 1 or < -1
+    
+    Parameters
+    ----------
+    x0, y0 : numbers
+        The corresponding x and y coordinate of the first point
+    x1, y1 : numbers
+        The corresponding x and y coordinate of the second point
+
+    Returns
+    -------
+    xlist, ylist
+        The list that contain coordinates of points from the first point and second points
+    """
+
     dx = x1 - x0
     dy = y1 - y0
     xi = 1
@@ -89,7 +134,21 @@ def plot_line_high(x0, y0, x1, y1):
     return xlist, ylist
 
 def plot_line(x0, y0, x1, y1):
-    """"""
+    """The main function performs drawing polygons
+    
+    Determine the first point and last point according to the octant
+
+    Parameters
+    ----------
+    x0, y0
+    x1, y1
+
+    Returns
+    -------
+    xlist, ylist
+        The list that contain coordinates of points from the first point and second points
+    """
+
     xlist = []
     ylist = []
     if abs(y1 - y0) < abs(x1 - x0):
@@ -105,7 +164,23 @@ def plot_line(x0, y0, x1, y1):
     return xlist, ylist
 
 def plot_polygons(ax, fig, polygons):
-    """Ploting polygon with scatter"""
+    """Ploting polygon with scatter
+
+    Parameters
+    ----------
+    ax : Axes
+        The Axes of the current figure
+    fig : Figure
+        The current figure
+    polygons : list of dictionary
+        Information of the polygons
+
+    Returns
+    -------
+    xlist, ylist
+        The list contains the entire x and y coordinates of the points that make up the polygons
+    """
+
     xlist = []                  
     ylist = []
     for polygon in polygons:
@@ -130,49 +205,23 @@ def searching_argorithm_name(x0, y0, x1, y1, xlist, ylist):
     x = [], y= []
     return x, y # with x, y are arrays contain X coordinate and Y coordinate corresponding OF ROUTE
 
-def is_inside_polygon(xlist, ylist, x0, y0):
-    """"""
-    # if the point on edge of the polygons
-    for x in xlist:
-        if x == x0 and ylist[xlist.index(x)] == x0:
-            return True
-
-    x_right_x0 = []
-    for x in xlist:
-        if x > x0 and ylist[xlist.index(x)] == y0:
-            x_right_x0.append(x)
-
-    num_touch_edge = 0
-    i = 0
-    quanl = len(x_right_x0)
-    if quanl <= 1:
-        return False
-
-    while(i < quanl):
-        if x_right_x0[i] + 1 != x_right_x0[i+1]:
-            num_touch_edge += 1
-        i += 1
-    if num_touch_edge % 2 == 0:
-        return False
-
-    return True
-
-# def make_graph(xlist, ylist, vertices_poly, xlim, ylim):
-#     """""""
-#     vertices = {}
-#     vertices["x"] = [], vertices["y"] = []
-
-#     edges = []
-    
-#     for i in range(1, xlim):
-#         for j in range(1, ylim):
-#             if is_inside_polygon(xlist, ylist, i, j):
-#                 continue
-#             vertices
-
-
 def main(filename):
-    """Processing main program"""
+    """Main program processing
+
+    - Get information from input file
+    - Set information for figure
+    - Plot polygons
+    - Find shortest route
+    - Print cost of the route
+    - Plot route
+
+    Parameters
+    ----------
+    filename : string
+        The input file name
+    """
+    # Get information from input file
+    # ---------------------------------------------------------------
     infor = read_file(filename)
     xlim = infor.get("space_lim")[0]
     ylim = infor.get("space_lim")[1]
@@ -188,6 +237,8 @@ def main(filename):
     num_poly = infor.get("num_poly")
 
     polygons = infor.get("polygons")
+    # ---------------------------------------------------------------
+
     fig = plt.figure()
     ax = plt.axes()
 
@@ -218,15 +269,12 @@ def main(filename):
     stations[1] = stations[len(stations)-1]
     stations[len(stations)-1] = temp
 
-    route = contruct_heuristic.nearest_neighbor(stations, my_dict)
-    print(route)
-    print(contruct_heuristic.cal_total_distance(route, my_dict))
-    new_route = contruct_heuristic.route_improvement(route, my_dict)
-    print(new_route)
-    print(contruct_heuristic.cal_total_distance(new_route, my_dict))
+    route = travelling_salesman.nearest_neighbor(stations, my_dict)
+    new_route = travelling_salesman.route_improvement(route, my_dict)
+    total_cost = travelling_salesman.cal_total_distance(new_route, my_dict)
 
+    print("Cost of the route: ", total_cost)
     #-----------------------------------------------
-    # graph
 
     i = 0
     while i < len(new_route) - 1:
@@ -240,11 +288,8 @@ def main(filename):
     x = [points[0][0], points[1][0]]
     y = [points[0][1], points[1][1]]
     ax.scatter(x, y, marker='o', color='black', zorder=2)
-    # plotting route
-    # x, y = searching_argorithm_name(...)
-    #ax.scatter(x, y, marker='o', color='red', zorder=2)
 
     plt.show()  
 
-#if __name__ == "__main__":
-main('input.txt')
+if __name__ == "__main__":
+    main('input.txt')
