@@ -1,5 +1,3 @@
-
-
 def is_goes_into_poly(xlist, ylist, x_parent, y_parent, x0, y0):
     """Check if a point goes into a polygon or not?
 
@@ -222,7 +220,7 @@ class Graph():
                         new_node = Node(parent=cur_node, coordinateX=node[0], coordinateY=node[1], dist=cur_node.dist + 1.5)
                     else:
                         new_node = Node(parent=cur_node, coordinateX=node[0], coordinateY=node[1], dist=cur_node.dist + 1)
-
+                    
                     if cur_node.parent == None:
                         if is_goes_into_poly(self.xlist, self.ylist, new_node.parent.coordinateX, new_node.parent.coordinateY, new_node.coordinateX, new_node.coordinateY) is False:
                             self.add_nodes(new_node)
