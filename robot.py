@@ -3,6 +3,7 @@ import numpy as np
 import argparse
 from searching_algorithm import breadth_first_search as searching
 from searching_algorithm import Astar as astar
+from searching_algorithm import Bellman as bell
 import travelling_salesman
 import bresenham_line_algo as plot_line
 
@@ -164,7 +165,9 @@ def main(filename, algorithm=1):
             elif algorithm == 2:
                 result = astar.searchAstar(points[i][0], points[i][1], points[j][0], points[j][1], ylim, xlim, xlist, ylist)
                 my_dict[(i, j)] = astar.pathcost(result[0], result[1])
-
+            elif algorithm == 3:
+                result = bell.bellman(points[i][0], points[i][1], points[j][0], points[j][1], xlim, ylim, xlist, ylist)
+                my_dict[(i, j)] = result[2]
             j += 1
         i += 1
 
@@ -189,6 +192,10 @@ def main(filename, algorithm=1):
             x, y = g.find_route(pos_end_node)
         elif algorithm == 2:
             result = astar.searchAstar(points[new_route[i]][0], points[new_route[i]][1], points[new_route[i+1]][0], points[new_route[i+1]][1], ylim, xlim, xlist, ylist)
+            x = result[0]
+            y = result[1]
+        elif algorithm == 3:
+            result = bell.bellman(points[new_route[i]][0], points[new_route[i]][1], points[new_route[i+1]][0], points[new_route[i+1]][1], xlim, ylim, xlist, ylist)
             x = result[0]
             y = result[1]
         ax.scatter(x, y, marker='o', color='yellow', zorder=2)
