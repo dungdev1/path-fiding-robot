@@ -1,7 +1,17 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import argparse
 from searching_algorithm import breadth_first_search as searching
+from searching_algorithm import Astar as astar
 import travelling_salesman
+import bresenham_line_algo as plot_line
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument('--input_path', '-i', required=True, help='input path for the program')
+parser.add_argument('specified_algo', type=int, help='index of specified algorithm: 1: BFS, 2: A*, 3:...')
+
+args = parser.parse_args()
 
 def read_file(filename):
     """Read data file and analysis that into needed informations
@@ -53,115 +63,6 @@ def read_file(filename):
         "polygons": polygons,
     }
 
-def plot_line_low(x0, y0, x1, y1):
-    """Draw line with slope between 0 and 1 or between 0 and -1
-
-    Parameters
-    ----------
-    x0, y0 : numbers
-        The corresponding x and y coordinate of the first point
-    x1, y1 : numbers
-        The corresponding x and y coordinate of the second point
-
-    Returns
-    -------
-    xlist, ylist
-        The list that contain coordinates of points from the first point and second points
-    """
-
-    dx = x1 - x0
-    dy = y1 - y0
-    yi = 1
-    if dy < 0:
-        yi = -1
-        dy = -dy
-    P = 2*dy - dx
-    y = y0
-    xlist = []
-    ylist = []
-    while(x0 <= x1):
-        # return point
-        xlist.append(x0)
-        ylist.append(y)
-
-        x0 += 1
-        if P < 0:
-            P += 2*dy
-        else:
-            P += 2*dy -2*dx
-            y += yi
-
-    return xlist, ylist
-    
-def plot_line_high(x0, y0, x1, y1):
-    """Draw line with slope > 1 or < -1
-    
-    Parameters
-    ----------
-    x0, y0 : numbers
-        The corresponding x and y coordinate of the first point
-    x1, y1 : numbers
-        The corresponding x and y coordinate of the second point
-
-    Returns
-    -------
-    xlist, ylist
-        The list that contain coordinates of points from the first point and second points
-    """
-
-    dx = x1 - x0
-    dy = y1 - y0
-    xi = 1
-    if dx < 0:
-        xi = -1
-        dx = -dx
-    P = 2*dx - dy
-    x = x0
-    xlist = []
-    ylist = []
-    while(y0 <= y1):
-        # return point
-        xlist.append(x)
-        ylist.append(y0)
-
-        y0 += 1
-        if P < 0:
-            P += 2*dx
-        else:
-            P += 2*dx - 2*dy
-            x += xi
-
-    return xlist, ylist
-
-def plot_line(x0, y0, x1, y1):
-    """The main function performs drawing polygons
-    
-    Determine the first point and last point according to the octant
-
-    Parameters
-    ----------
-    x0, y0
-    x1, y1
-
-    Returns
-    -------
-    xlist, ylist
-        The list that contain coordinates of points from the first point and second points
-    """
-
-    xlist = []
-    ylist = []
-    if abs(y1 - y0) < abs(x1 - x0):
-        if x0 > x1:
-            xlist, ylist = plot_line_low(x1, y1, x0, y0)
-        else:
-            xlist, ylist = plot_line_low(x0, y0, x1, y1)
-    else:
-        if y0 > y1:
-            xlist, ylist = plot_line_high(x1, y1, x0, y0)
-        else:
-            xlist, ylist = plot_line_high(x0, y0, x1, y1)
-    return xlist, ylist
 
 def plot_polygons(ax, fig, polygons):
     """Ploting polygon with scatter
@@ -188,9 +89,9 @@ def plot_polygons(ax, fig, polygons):
         i = 0
         while i < length:
             if i == length - 1:
-                x, y = plot_line(polygon["x"][-1], polygon["y"][-1], polygon["x"][0], polygon["y"][0])
+                x, y = plot_line.plot_line(polygon["x"][-1], polygon["y"][-1], polygon["x"][0], polygon["y"][0])
             else:
-                x, y = plot_line(polygon["x"][i], polygon["y"][i], polygon["x"][i+1], polygon["y"][i+1])
+                x, y = plot_line.plot_line(polygon["x"][i], polygon["y"][i], polygon["x"][i+1], polygon["y"][i+1])
             ax.scatter(polygon["x"][i], polygon["y"][i], marker='o', color='green', zorder=2)
             i += 1
             xlist.extend(x)
@@ -199,13 +100,11 @@ def plot_polygons(ax, fig, polygons):
     ax.scatter(xlist, ylist)
     return xlist, ylist
 
-# A(x0, y0), B(x1, y1), xlist, ylist are array contain X coordinate and Y coordinate corresponding
-def searching_argorithm_name(x0, y0, x1, y1, xlist, ylist):
     """"""
     x = [], y= []
     return x, y # with x, y are arrays contain X coordinate and Y coordinate corresponding OF ROUTE
 
-def main(filename):
+def main(filename, algorithm=1):
     """Main program processing
 
     - Get information from input file
@@ -219,6 +118,8 @@ def main(filename):
     ----------
     filename : string
         The input file name
+    algorithm : numbers
+        The specified algorithm (default 1: BFS)
     """
     # Get information from input file
     # ---------------------------------------------------------------
@@ -235,7 +136,6 @@ def main(filename):
         i += 2
 
     num_poly = infor.get("num_poly")
-
     polygons = infor.get("polygons")
     # ---------------------------------------------------------------
 
@@ -257,12 +157,16 @@ def main(filename):
     while i < num_points:
         j = 0
         while j < num_points:
-            g = searching.Graph((xlim, ylim), xlist, ylist, points[i], points[j])
-            pos_end_node = g.spread_node()
-            my_dict[(i, j)] = g.nodes[pos_end_node].dist
+            if algorithm == 1:
+                g = searching.Graph((xlim, ylim), xlist, ylist, points[i], points[j])
+                pos_end_node = g.spread_node()
+                my_dict[(i, j)] = g.nodes[pos_end_node].dist
+            elif algorithm == 2:
+                result = astar.searchAstar(points[i][0], points[i][1], points[j][0], points[j][1], ylim, xlim, xlist, ylist)
+                my_dict[(i, j)] = astar.pathcost(result[0], result[1])
+
             j += 1
         i += 1
-
 
     stations = [x for x in range(num_points)]
     temp = stations[1]
@@ -272,15 +176,21 @@ def main(filename):
     route = travelling_salesman.nearest_neighbor(stations, my_dict)
     new_route = travelling_salesman.route_improvement(route, my_dict)
     total_cost = travelling_salesman.cal_total_distance(new_route, my_dict)
+    print(new_route)
 
     print("Cost of the route: ", total_cost)
     #-----------------------------------------------
 
     i = 0
     while i < len(new_route) - 1:
-        g = searching.Graph((xlim, ylim), xlist, ylist, points[new_route[i]], points[new_route[i+1]])
-        pos_end_node = g.spread_node()
-        x, y = g.find_route(pos_end_node)
+        if algorithm == 1:
+            g = searching.Graph((xlim, ylim), xlist, ylist, points[new_route[i]], points[new_route[i+1]])
+            pos_end_node = g.spread_node()
+            x, y = g.find_route(pos_end_node)
+        elif algorithm == 2:
+            result = astar.searchAstar(points[new_route[i]][0], points[new_route[i]][1], points[new_route[i+1]][0], points[new_route[i+1]][1], ylim, xlim, xlist, ylist)
+            x = result[0]
+            y = result[1]
         ax.scatter(x, y, marker='o', color='yellow', zorder=2)
         ax.scatter([x[0], x[-1]], [y[0], y[-1]], marker='o', color='red', zorder=2)
         i += 1
@@ -292,4 +202,4 @@ def main(filename):
     plt.show()  
 
 if __name__ == "__main__":
-    main('input.txt')
+    main(args.input_path, args.specified_algo)
