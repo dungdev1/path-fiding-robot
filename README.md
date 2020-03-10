@@ -1,2 +1,2 @@
-# path-fiding-robot
+# robot-finds-way
 Apply searching algorithms
